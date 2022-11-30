@@ -15,9 +15,10 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::prefix('auth')->group(function () {
-    Route::post('login', [UserController::class, 'login']);
-});
+
+Route::get('/users/me', [UserController::class, 'me']);
+Route::apiResource('users', UserController::class);
+
 
 //Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 //    return $request->user();

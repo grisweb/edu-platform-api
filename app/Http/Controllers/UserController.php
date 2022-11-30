@@ -2,23 +2,81 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Middleware\Authenticate;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
-    public function login(Request $request): string
+    public function __construct()
     {
-        $request->validate([
-            'azureToken' => 'required'
-        ]);
+        $this->middleware('auth');
+        $this->middleware('role:admin')->only(['']);
+    }
 
-        $token = $request->input('azureToken');
+    /**
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function me()
+    {
+        $user = Auth::getUser();
+        return response()->json($user);
+    }
 
-        $response = Http::acceptJson()->withHeaders([
-            'Authorization' => "Bearer ${token}"
-        ])->get('https://graph.microsoft.com/v1.0/me');
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function index(Request $request)
+    {
+        $users = User::all();
+        return response()->json($users);
+    }
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        //
+    }
 
-        return $response;
+    /**
+     * Display the specified resource.
+     *
+     * @param  \App\Models\User  $user
+     * @return \Illuminate\Http\Response
+     */
+    public function show(User $user)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\User  $user
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, User $user)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  \App\Models\User  $user
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy(User $user)
+    {
+        //
     }
 }
