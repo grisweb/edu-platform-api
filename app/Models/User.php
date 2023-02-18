@@ -4,6 +4,8 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -14,6 +16,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property int $id
  * @property string $name
  * @property string $email
+ * @property string $role
  * @property \Illuminate\Support\Carbon|null $email_verified_at
  * @property string|null $password
  * @property string|null $remember_token
@@ -23,7 +26,6 @@ use Laravel\Sanctum\HasApiTokens;
  * @property-read int|null $notifications_count
  * @property-read \Illuminate\Database\Eloquent\Collection|\Laravel\Sanctum\PersonalAccessToken[] $tokens
  * @property-read int|null $tokens_count
- * @method static \Database\Factories\UserFactory factory(...$parameters)
  * @method static \Illuminate\Database\Eloquent\Builder|User newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|User newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|User query()
@@ -36,6 +38,11 @@ use Laravel\Sanctum\HasApiTokens;
  * @method static \Illuminate\Database\Eloquent\Builder|User whereRememberToken($value)
  * @method static \Illuminate\Database\Eloquent\Builder|User whereUpdatedAt($value)
  * @mixin \Eloquent
+ * @property string $ms_id
+ * @method static \Illuminate\Database\Eloquent\Builder|User whereMsId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|User whereRole($value)
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Course[] $courses
+ * @property-read int|null $courses_count
  */
 class User extends Authenticatable
 {
@@ -49,6 +56,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'ms_id'
     ];
 
     /**
@@ -69,4 +77,13 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function courses(): HasMany|BelongsToMany
+    {
+        if (in_array($this->role, ['teacher', 'admin'])) {
+            return $this->hasMany(Course::class);
+        }
+
+        return $this->belongsToMany(Course::class);
+    }
 }

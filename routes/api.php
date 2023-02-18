@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\CourseController;
+use App\Http\Controllers\UploadController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -15,11 +17,10 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-
 Route::get('/users/me', [UserController::class, 'me']);
-Route::apiResource('users', UserController::class);
+Route::get('/users/autocomplete', [UserController::class, 'autocompleteSearch']);
+Route::apiResource('users', UserController::class)->except(['update']);
 
+Route::apiResource('courses', CourseController::class)->scoped(['course' => 'uuid']);
 
-//Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-//    return $request->user();
-//});
+Route::post('/uploads/images', [UploadController::class, 'storeImage']);

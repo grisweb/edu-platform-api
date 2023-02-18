@@ -3,40 +3,37 @@
 namespace App\Services;
 
 use App\Models\User;
-use GuzzleHttp\Exception\GuzzleException;
+use Exception;
+use GuzzleHttp\Promise\PromiseInterface;
+use Illuminate\Http\Client\HttpClientException;
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
-use Microsoft\Graph\Exception\GraphException;
-use Microsoft\Graph\Graph;
-use Microsoft\Graph\Model;
 
 class MsGraphService
 {
+    const MS_GRAPH_BASE_PATH = 'https://graph.microsoft.com/v1.0';
+
     protected ?User $user;
 
-    protected Graph $graph;
+    protected ?string $msToken;
 
-    protected Request $request;
+    protected PendingRequest $http;
 
     /**
-     * @throws GuzzleException
-     * @throws GraphException
+     * @param  Request  $request
      */
     public function __construct(Request $request)
     {
-//        $this->graph = (new Graph())->setAccessToken($request->bearerToken());
-//
-//        $msUser = $this->graph
-//            ->createRequest('GET', '/me')
-//            ->setReturnType(Model\User::class)
-//            ->execute();
-
         $msToken = $request->bearerToken();
+        $this->msToken = $msToken;
 
-        $response = Http::acceptJson()->withHeaders([
+        $this->http = Http::baseUrl(self::MS_GRAPH_BASE_PATH)->acceptJson()->withHeaders([
             'Authorization' => "Bearer ${msToken}"
-        ])->get('https://graph.microsoft.com/v1.0/me');
+        ]);
+
+        $response = $this->http->get('/me');
 
         if ($response->status() === 200) {
             $user = User::where(['ms_id' => $response['id']])->first();
@@ -46,8 +43,42 @@ class MsGraphService
         }
     }
 
-    public function getUser()
+    public function getUser(): User|null
     {
         return $this->user;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function findUsers(string $query)
+    {
+        $response = $this->http->withHeaders([
+            'ConsistencyLevel' => 'eventual'
+        ])->get('/users', [
+            '$search' => '"displayName:'.$query.'" OR "mail:'.$query.'"'
+        ]);
+
+        if ($response->status() !== 200) {
+            throw new HttpClientException('Error find', $response->status());
+        }
+
+        return $response['value'];
+    }
+
+    /**
+     * @param  string  $id
+     * @return PromiseInterface|Response
+     * @throws HttpClientException
+     */
+    public function getUserById(string $id): PromiseInterface|Response
+    {
+        $response = $this->http->get('/users/'.$id);
+
+        if ($response->status() !== 200) {
+            throw new HttpClientException('Error find user by id!', $response->status());
+        }
+
+        return $response;
     }
 }
